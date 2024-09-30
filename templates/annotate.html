@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="py-8">
+    <h1 class="text-3xl mb-4">Annotation Interface</h1>
+    <div id="annotation-form" data-sentence-id="{{ sentence.id }}">
+        {{ form.csrf_token }}
+        <div class="mb-4">
+            <h2 class="text-xl mb-2">Original Text</h2>
+            <p class="mb-4 original-text">{{ sentence.original_text }}</p>
+        </div>
+        {% for model in shuffled_models %}
+        <div class="border p-4 rounded mb-4">
+            <div class="mb-4 translation-container">
+                <p class="mb-4 translation" data-model="{{ sentence[model + '_name'] }}">{{ sentence[model + '_translation'] }}</p>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="score{{ loop.index0 }}">
+                    Overall Score (0-100%)
+                </label>
+                <input type="range" min="0" max="100" value="50" class="range" step="1" id="score{{ loop.index0 }}" data-model="{{ sentence[model + '_name'] }}" />
+                <div class="w-full flex justify-between text-xs px-2">
+                    <span>0%</span>
+                    <span>33%</span>
+                    <span>66%</span>
+                    <span>100%</span>
+                </div>
+            </div>
+            <div class="mt-4">
+                <button type="button" class="btn btn-sm btn-outline missing-content-btn" data-missing-type="minor" data-model="{{ sentence[model + '_name'] }}">Minor Missing</button>
+                <button type="button" class="btn btn-sm btn-outline missing-content-btn" data-missing-type="major" data-model="{{ sentence[model + '_name'] }}">Major Missing</button>
+            </div>
+        </div>
+        {% endfor %}
+        <div class="mt-8 flex justify-between">
+            {% if prev_id %}
+            <a href="{{ url_for('annotate_sentence', sentence_id=prev_id) }}" class="btn btn-lg btn-secondary">Previous</a>
+            {% else %}
+            <button class="btn btn-lg btn-secondary" disabled>Previous</button>
+            {% endif %}
+
+            <button type="button" class="btn btn-lg btn-primary" id="mark-complete">Mark as Complete</button>
+
+            {% if next_id %}
+            <a href="{{ url_for('annotate_sentence', sentence_id=next_id) }}" class="btn btn-lg btn-primary">Next</a>
+            {% else %}
+            <button class="btn btn-lg btn-primary" disabled>Next</button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Error Type Modal -->
+<div id="errorTypeModal" class="fixed z-10 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                    Select Error Type
+                </h3>
+                <div class="mt-2">
+                    <p class="text-sm text-gray-500">
+                        Please select the type of error for the highlighted text.
+                    </p>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm" id="majorErrorBtn">
+                    Major Error
+                </button>
+                <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm" id="minorErrorBtn">
+                    Minor Error
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .highlight-minor {
+        background-color: rgba(255, 255, 0, 0.3);
+        position: relative;
+    }
+    .highlight-major {
+        background-color: rgba(255, 0, 0, 0.3);
+        position: relative;
+    }
+
+    .highlight-minor::after,
+    .highlight-major::after {
+        content: '×';
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        cursor: pointer;
+        background-color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        text-align: center;
+        line-height: 20px;
+        font-weight: bold;
+    }
+
+    .highlight-remove {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        cursor: pointer;
+        background-color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        text-align: center;
+        line-height: 20px;
+        font-weight: bold;
+    }
+    .btn-active {
+        background-color: #4CAF50;
+        color: white;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('annotation-form');
+    const translations = document.querySelectorAll('.translation');
+    const missingContentBtns = document.querySelectorAll('.missing-content-btn');
+    const errorTypeModal = document.getElementById('errorTypeModal');
+    const majorErrorBtn = document.getElementById('majorErrorBtn');
+    const minorErrorBtn = document.getElementById('minorErrorBtn');
+    const scoreInputs = document.querySelectorAll('input[type="range"]');
+    const prevBtn = document.querySelector('a.btn-secondary');
+    const nextBtn = document.querySelector('a.btn-primary');
+    const markCompleteBtn = document.getElementById('mark-complete');
+
+    let errorSpans = {};
+    let currentSelection = null;
+    const originalTexts = new Map();
+
+    translations.forEach(translation => {
+        originalTexts.set(translation, translation.textContent);
+        translation.addEventListener('mouseup', handleSelection);
+    });
+
+    function handleSelection(event) {
+        const selection = window.getSelection();
+        if (selection.toString().length > 0) {
+            const range = selection.getRangeAt(0);
+            const startContainer = range.startContainer;
+            const endContainer = range.endContainer;
+            
+            let startOffset = getTextOffset(this, startContainer, range.startOffset);
+            let endOffset = getTextOffset(this, endContainer, range.endOffset);
+
+            currentSelection = {
+                translation: this,
+                start: startOffset,
+                end: endOffset,
+                text: originalTexts.get(this).slice(startOffset, endOffset)
+            };
+            errorTypeModal.classList.remove('hidden');
+        }
+    }
+
+    function getTextOffset(rootElement, targetNode, offset) {
+        const treeWalker = document.createTreeWalker(rootElement, NodeFilter.SHOW_TEXT, null, false);
+        let currentOffset = 0;
+
+        while (treeWalker.nextNode()) {
+            if (treeWalker.currentNode === targetNode) {
+                return currentOffset + offset;
+            }
+            // Remove the condition to include all text nodes
+            currentOffset += treeWalker.currentNode.length;
+        }
+
+        return currentOffset;
+    }
+
+
+    function saveAnnotation(data) {
+        fetch('/save_annotation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                console.error('Error saving annotation:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error saving annotation:', error);
+        });
+    }
+
+    function highlightText(translation, spans) {
+        const originalText = originalTexts.get(translation);
+
+        // Sort spans by start position
+        spans = spans.sort((a, b) => a.start - b.start);
+
+        let currentIndex = 0;
+        let newHTML = '';
+
+        spans.forEach(span => {
+            const start = span.start;
+            const end = span.end;
+            const type = span.type;
+
+            if (start > currentIndex) {
+                newHTML += originalText.slice(currentIndex, start);
+            }
+
+            newHTML += createHighlightSpan(originalText.slice(start, end), start, end, type);
+
+            currentIndex = end;
+        });
+
+        // Add remaining text
+        newHTML += originalText.slice(currentIndex);
+
+        translation.innerHTML = newHTML;
+    }
+
+
+    function createHighlightSpan(text, start, end, type) {
+        return `<span class="highlight-${type}" data-start="${start}" data-end="${end}" onclick="removeHighlight(this, event)">${text}</span>`;
+    }
+
+
+    function removeHighlight(span, event) {
+        event.stopPropagation();  // Prevent the click from bubbling up
+        const translation = span.closest('.translation');
+        const start = parseInt(span.dataset.start);
+        const end = parseInt(span.dataset.end);
+        const modelName = translation.dataset.model;
+
+        // Update errorSpans
+        if (errorSpans[modelName]) {
+            errorSpans[modelName] = errorSpans[modelName].filter(s => !(s.start === start && s.end === end));
+            // Re-highlight
+            translation.innerHTML = originalTexts.get(translation);
+            if (errorSpans[modelName].length > 0) {
+                highlightText(translation, errorSpans[modelName]);
+            }
+        }
+
+        saveAnnotation({
+            sentence_id: form.dataset.sentenceId,
+            model_name: modelName,
+            remove_error_span: { start, end }
+        });
+    }
+
+
+    window.removeHighlight = removeHighlight;  // Ensure this function is accessible globally
+
+
+    window.removeHighlight = removeHighlight;  // Make it globally accessible
+
+    function loadExistingAnnotations() {
+        fetch(`/get_annotations/${form.dataset.sentenceId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log(data);
+                errorSpans = {}; // Reset errorSpans
+                translations.forEach(translation => {
+                    translation.innerHTML = originalTexts.get(translation);
+                    
+                    // Reset all missing content buttons
+                    const missingBtns = translation.closest('.border').querySelectorAll('.missing-content-btn');
+                    missingBtns.forEach(btn => btn.classList.remove('btn-active'));
+                });
+
+                data.annotations.forEach(annotation => {
+                    const translation = document.querySelector(`.translation[data-model="${annotation.model_name}"]`);
+                    if (translation) {
+                        // Save error spans for this model
+                        errorSpans[annotation.model_name] = annotation.error_spans || [];
+
+                        // Apply all error spans
+                        if (errorSpans[annotation.model_name].length > 0) {
+                            highlightText(translation, errorSpans[annotation.model_name]);
+                        }
+
+                        // Set missing content buttons
+                        annotation.missing_content.forEach(missing => {
+                            const btn = translation.closest('.border').querySelector(`.missing-content-btn[data-missing-type="${missing.type}"][data-model="${annotation.model_name}"]`);
+                            if (btn) btn.classList.add('btn-active');
+                        });
+                        
+                        // Set overall score
+                        const scoreInput = translation.closest('.border').querySelector('input[type="range"]');
+                        if (scoreInput) scoreInput.value = annotation.overall_score;
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error loading annotations:', error);
+            });
+    }
+
+
+
+    loadExistingAnnotations();
+
+    function handleErrorType(type) {
+        if (currentSelection) {
+            const { translation, start, end, text } = currentSelection;
+            const modelName = translation.dataset.model;
+
+            // Update errorSpans
+            if (!errorSpans[modelName]) {
+                errorSpans[modelName] = [];
+            }
+            errorSpans[modelName].push({
+                start: start,
+                end: end,
+                type: type
+            });
+
+            // Re-highlight all spans for this translation
+            highlightText(translation, errorSpans[modelName]);
+
+            // Save to server
+            saveAnnotation({
+                sentence_id: form.dataset.sentenceId,
+                model_name: modelName,
+                error_span: {
+                    start: start,
+                    end: end,
+                    text: text,
+                    type: type
+                }
+            });
+
+            errorTypeModal.classList.add('hidden');
+            currentSelection = null;
+        }
+    }
+
+
+    majorErrorBtn.addEventListener('click', () => handleErrorType('major'));
+    minorErrorBtn.addEventListener('click', () => handleErrorType('minor'));
+
+    missingContentBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const modelName = this.dataset.model;
+            const missingType = this.dataset.missingType;
+            
+            if (!this.classList.contains('btn-active')) {
+                this.classList.add('btn-active');
+                saveAnnotation({
+                    sentence_id: form.dataset.sentenceId,
+                    model_name: modelName,
+                    missing_content: {
+                        type: missingType
+                    }
+                });
+            } else {
+                this.classList.remove('btn-active');
+                saveAnnotation({
+                    sentence_id: form.dataset.sentenceId,
+                    model_name: modelName,
+                    remove_missing_content: {
+                        type: missingType
+                    }
+                });
+            }
+        });
+    });
+
+    scoreInputs.forEach(input => {
+        let timeout;
+        input.addEventListener('input', function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                saveAnnotation({
+                    sentence_id: form.dataset.sentenceId,
+                    model_name: this.dataset.model,
+                    overall_score: parseInt(this.value)
+                });
+            }, 100);
+        });
+    });
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = prevBtn.href;
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.href = nextBtn.href;
+        });
+    }
+
+    markCompleteBtn.addEventListener('click', () => {
+        saveAnnotation({
+            sentence_id: form.dataset.sentenceId,
+            is_completed: true
+        });
+        alert('Task marked as complete');
+        if (nextBtn && nextBtn.href) {
+            window.location.href = nextBtn.href;
+        } else {
+            window.location.href = '{{ url_for("annotate") }}';
+        }
+    });
+});
+</script>
+{% endblock %}

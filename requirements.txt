@@ -1,0 +1,9 @@
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Login
+psycopg2
+SQLAlchemy
+Werkzeug
+python-dotenv
+Flask-WTF

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-screen">
+    <div class="text-center">
+        <h1 class="text-3xl mb-4">Annotation Completed</h1>
+        <p class="mb-8">You have annotated all available sentences. Thank you for your contribution!</p>
+        <a href="{{ url_for('logout') }}" class="btn btn-primary">Logout</a>
+    </div>
+</div>
+{% endblock %}
