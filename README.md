@@ -50,6 +50,7 @@ This is a Flask-based web application for annotating error spans in translations
 2. Create a new Heroku app:
    ```
    heroku create your-app-name
+   heroku git:remote -a faroese-translation-annotation
    ```
 
 3. Add a PostgreSQL database to your Heroku app:
