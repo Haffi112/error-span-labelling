@@ -7,7 +7,7 @@ from sqlalchemy.ext.mutable import MutableList
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128))
+    password_hash = db.Column(db.String(1024))
     role = db.Column(db.String(20), nullable=False)
     last_annotated_set_id = db.Column(db.Integer, nullable=True, default=None)
 
