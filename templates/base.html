@@ -4,16 +4,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Translation Error Span Annotation{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@2.51.5/dist/full.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
-    <nav class="bg-gray-800 p-4">
+    <nav class="bg-base-300 p-4">
         <div class="container mx-auto flex justify-between items-center">
-            <a href="{{ url_for('index') }}" class="text-white text-xl font-bold">Annotation Tool</a>
-            <div>
+            <a href="{{ url_for('index') }}" class="text-base-content text-xl font-bold">Translation Error Span Annotation Tool</a>
+            <div class="flex items-center">
+                <div class="dropdown dropdown-end mr-4">
+                    <label tabindex="0" class="btn btn-ghost m-1">Theme</label>
+                    <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 theme-dropdown">
+                        <li><a onclick="changeTheme('light')">Light</a></li>
+                        <li><a onclick="changeTheme('dark')">Dark</a></li>
+                        <li><a onclick="changeTheme('cupcake')">Cupcake</a></li>
+                        <li><a onclick="changeTheme('bumblebee')">Bumblebee</a></li>
+                        <li><a onclick="changeTheme('emerald')">Emerald</a></li>
+                        <li><a onclick="changeTheme('corporate')">Corporate</a></li>
+                        <li><a onclick="changeTheme('synthwave')">Synthwave</a></li>
+                        <li><a onclick="changeTheme('retro')">Retro</a></li>
+                        <li><a onclick="changeTheme('cyberpunk')">Cyberpunk</a></li>
+                        <li><a onclick="changeTheme('valentine')">Valentine</a></li>
+                        <li><a onclick="changeTheme('halloween')">Halloween</a></li>
+                        <li><a onclick="changeTheme('garden')">Garden</a></li>
+                        <li><a onclick="changeTheme('forest')">Forest</a></li>
+                        <li><a onclick="changeTheme('aqua')">Aqua</a></li>
+                        <li><a onclick="changeTheme('lofi')">Lofi</a></li>
+                        <li><a onclick="changeTheme('pastel')">Pastel</a></li>
+                        <li><a onclick="changeTheme('fantasy')">Fantasy</a></li>
+                        <li><a onclick="changeTheme('wireframe')">Wireframe</a></li>
+                        <li><a onclick="changeTheme('black')">Black</a></li>
+                        <li><a onclick="changeTheme('luxury')">Luxury</a></li>
+                        <li><a onclick="changeTheme('dracula')">Dracula</a></li>
+                        <li><a onclick="changeTheme('cmyk')">CMYK</a></li>
+                        <li><a onclick="changeTheme('autumn')">Autumn</a></li>
+                        <li><a onclick="changeTheme('business')">Business</a></li>
+                        <li><a onclick="changeTheme('acid')">Acid</a></li>
+                        <li><a onclick="changeTheme('lemonade')">Lemonade</a></li>
+                        <li><a onclick="changeTheme('night')">Night</a></li>
+                        <li><a onclick="changeTheme('coffee')">Coffee</a></li>
+                        <li><a onclick="changeTheme('winter')">Winter</a></li>
+                        <li><a onclick="changeTheme('dim')">Dim</a></li>
+                        <li><a onclick="changeTheme('nord')">Nord</a></li>
+                        <li><a onclick="changeTheme('sunset')">Sunset</a></li>
+                    </ul>
+                </div>
                 {% if current_user.is_authenticated %}
-                    <span class="text-white mr-4">Welcome, {{ current_user.username }}</span>
+                    <span class="text-base-content mr-4">Welcome, {{ current_user.username }}</span>
                     <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline btn-accent">Logout</a>
                 {% else %}
                     <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline btn-primary mr-2">Login</a>
@@ -25,5 +62,20 @@
     <div class="container mx-auto px-4">
         {% block content %}{% endblock %}
     </div>
+
+    <script>
+        function changeTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        }
+
+        // Load saved theme from localStorage
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            }
+        });
+    </script>
 </body>
 </html>

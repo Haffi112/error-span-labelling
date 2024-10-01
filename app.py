@@ -149,6 +149,15 @@ def create_app():
         sentence = Sentence.query.get_or_404(sentence_id)
         form = AnnotationForm()
 
+        # Check if the current user has completed this annotation
+        user_annotation = Annotation.query.filter_by(
+            sentence_id=sentence_id,
+            annotator_id=current_user.id,
+            is_completed=True
+        ).first()
+
+        is_completed = user_annotation is not None
+
         if form.validate_on_submit():
             # Handle form submission (marking as complete)
             annotation = Annotation.query.filter_by(
@@ -175,7 +184,7 @@ def create_app():
         prev_sentence = Sentence.query.filter(Sentence.id < sentence_id).order_by(Sentence.id.desc()).first()
 
         # Create a shuffled list of model names
-        models = ['model1', 'model2', 'model3']
+        models = ['model1', 'model2', 'model3', 'model4']
         random.seed(sentence_id)  # Use sentence_id as seed for consistent shuffling
         shuffled_models = random.sample(models, len(models))
 
@@ -184,7 +193,8 @@ def create_app():
                                sentence=sentence, 
                                next_id=next_sentence.id if next_sentence else None,
                                prev_id=prev_sentence.id if prev_sentence else None,
-                               shuffled_models=shuffled_models)
+                               shuffled_models=shuffled_models,
+                               is_completed=is_completed)
 
     @app.route('/save_annotation', methods=['POST'])
     @login_required
@@ -228,6 +238,8 @@ def create_app():
                 ]
             if 'overall_score' in data:
                 annotation.overall_score = data['overall_score']
+            if 'is_completed' in data:
+                annotation.is_completed = data['is_completed']
 
             db.session.commit()
             return jsonify({'success': True})
@@ -268,7 +280,9 @@ def create_app():
                         model2_name=row['model2_name'],
                         model2_translation=row['model2_translation'],
                         model3_name=row['model3_name'],
-                        model3_translation=row['model3_translation']
+                        model3_translation=row['model3_translation'],
+                        model4_name=row['model4_name'],
+                        model4_translation=row['model4_translation']
                     )
                     db.session.add(new_sentence)
                 

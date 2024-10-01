@@ -1,6 +1,3 @@
-original_text,translation_method,model1_name,model1_translation,model2_name,model2_translation,model3_name,model3_translation
-"Hello, how are you doing today?",neural_machine_translation,GPT-3,"Hola, ¿cómo estás hoy?",NLLB,"Bonjour, comment allez-vous aujourd'hui ?",Google Translate,"Ciao, come stai oggi?"
-"The quick brown fox jumps over the lazy dog.",statistical_machine_translation,GPT-3,"El zorro marrón rápido salta sobre el perro perezoso.",NLLB,"Le rapide renard brun saute par-dessus le chien paresseux.",Google Translate,"La volpe marrone rapida salta sopra il cane pigro."
-"I love to eat pizza with extra cheese.",neural_machine_translation,GPT-3,"Me encanta comer pizza con queso extra.",NLLB,"J'adore manger de la pizza avec du fromage supplémentaire.",Google Translate,"Amo mangiare la pizza con formaggio extra."
-"The concert was cancelled due to bad weather.",statistical_machine_translation,GPT-3,"El concierto fue cancelado debido al mal tiempo.",NLLB,"Le concert a été annulé en raison du mauvais temps.",Google Translate,"Il concerto è stato annullato a causa del maltempo."
-"Can you please help me find my lost keys?",neural_machine_translation,GPT-3,"¿Puedes ayudarme a encontrar mis llaves perdidas?",NLLB,"Pouvez-vous m'aider à trouver mes clés perdues, s'il vous plaît ?",Google Translate,"Puoi aiutarmi a trovare le mie chiavi perse, per favore?"
+original_text,translation_method,model1_name,model1_translation,model2_name,model2_translation,model3_name,model3_translation,model4_name,model4_translation
+"Hello, world!",neural_machine_translation,GPT-3,"Hola, mundo!",NLLB,"Bonjour, le monde!",Google Translate,"Ciao, mondo!",DeepL,"Hallo, Welt!"
+"How are you?",statistical_machine_translation,GPT-3,"¿Cómo estás?",NLLB,"Comment allez-vous?",Google Translate,"Come stai?",DeepL,"Wie geht es dir?"

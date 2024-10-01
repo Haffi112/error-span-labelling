@@ -43,9 +43,6 @@ Thumbs.db
 *.pyc
 staticfiles/
 
-# Flask-Migrate
-migrations/
-
 # Pytest
 .pytest_cache/
 

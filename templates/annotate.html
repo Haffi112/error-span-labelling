@@ -1,25 +1,24 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="py-8">
-    <h1 class="text-3xl mb-4">Annotation Interface</h1>
+<div class="py-8 max-w-4xl mx-auto">
     <div id="annotation-form" data-sentence-id="{{ sentence.id }}">
         {{ form.csrf_token }}
-        <div class="mb-4">
-            <h2 class="text-xl mb-2">Original Text</h2>
-            <p class="mb-4 original-text">{{ sentence.original_text }}</p>
+        <div class="mb-8 bg-base-200 p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold mb-4 text-base-content">Original Text</h2>
+            <p class="text-lg leading-relaxed text-base-content font-serif italic">{{ sentence.original_text }}</p>
         </div>
         {% for model in shuffled_models %}
-        <div class="border p-4 rounded mb-4">
+        <div class="border border-base-300 p-4 rounded mb-4 bg-base-100">
             <div class="mb-4 translation-container">
-                <p class="mb-4 translation" data-model="{{ sentence[model + '_name'] }}">{{ sentence[model + '_translation'] }}</p>
+                <p class="mb-4 translation text-base-content" data-model="{{ sentence[model + '_name'] }}">{{ sentence[model + '_translation'] }}</p>
             </div>
             <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="score{{ loop.index0 }}">
+                <label class="block text-base-content text-sm font-bold mb-2" for="score{{ loop.index0 }}">
                     Overall Score (0-100%)
                 </label>
-                <input type="range" min="0" max="100" value="50" class="range" step="1" id="score{{ loop.index0 }}" data-model="{{ sentence[model + '_name'] }}" />
-                <div class="w-full flex justify-between text-xs px-2">
+                <input type="range" min="0" max="100" value="50" class="range range-primary" step="1" id="score{{ loop.index0 }}" data-model="{{ sentence[model + '_name'] }}" />
+                <div class="w-full flex justify-between text-xs px-2 text-base-content">
                     <span>0%</span>
                     <span>33%</span>
                     <span>66%</span>
@@ -27,19 +26,25 @@
                 </div>
             </div>
             <div class="mt-4">
-                <button type="button" class="btn btn-sm btn-outline missing-content-btn" data-missing-type="minor" data-model="{{ sentence[model + '_name'] }}">Minor Missing</button>
-                <button type="button" class="btn btn-sm btn-outline missing-content-btn" data-missing-type="major" data-model="{{ sentence[model + '_name'] }}">Major Missing</button>
+                <button type="button" class="btn btn-sm btn-outline btn-primary missing-content-btn" data-missing-type="minor" data-model="{{ sentence[model + '_name'] }}">Minor Missing</button>
+                <button type="button" class="btn btn-sm btn-outline btn-secondary missing-content-btn" data-missing-type="major" data-model="{{ sentence[model + '_name'] }}">Major Missing</button>
             </div>
         </div>
         {% endfor %}
         <div class="mt-8 flex justify-between">
             {% if prev_id %}
-            <a href="{{ url_for('annotate_sentence', sentence_id=prev_id) }}" class="btn btn-lg btn-secondary">Previous</a>
+            <a href="{{ url_for('annotate_sentence', sentence_id=prev_id) }}" class="btn btn-lg btn-neutral">Previous</a>
             {% else %}
-            <button class="btn btn-lg btn-secondary" disabled>Previous</button>
+            <button class="btn btn-lg btn-neutral" disabled>Previous</button>
             {% endif %}
 
-            <button type="button" class="btn btn-lg btn-primary" id="mark-complete">Mark as Complete</button>
+            <button type="button" class="btn btn-lg {% if is_completed %}btn-success{% else %}btn-outline btn-success{% endif %}" id="mark-complete">
+                {% if is_completed %}
+                    Completed
+                {% else %}
+                    Mark as Complete
+                {% endif %}
+            </button>
 
             {% if next_id %}
             <a href="{{ url_for('annotate_sentence', sentence_id=next_id) }}" class="btn btn-lg btn-primary">Next</a>
@@ -51,40 +56,24 @@
 </div>
 
 <!-- Error Type Modal -->
-<div id="errorTypeModal" class="fixed z-10 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                    Select Error Type
-                </h3>
-                <div class="mt-2">
-                    <p class="text-sm text-gray-500">
-                        Please select the type of error for the highlighted text.
-                    </p>
-                </div>
-            </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm" id="majorErrorBtn">
-                    Major Error
-                </button>
-                <button type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm" id="minorErrorBtn">
-                    Minor Error
-                </button>
-            </div>
+<div id="errorTypeModal" class="modal">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg">Select Error Type</h3>
+        <p class="py-4">Please select the type of error for the highlighted text.</p>
+        <div class="modal-action">
+            <button id="majorErrorBtn" class="btn btn-error">Major Error</button>
+            <button id="minorErrorBtn" class="btn btn-warning">Minor Error</button>
         </div>
     </div>
 </div>
 
 <style>
     .highlight-minor {
-        background-color: rgba(255, 255, 0, 0.3);
+        background-color: oklch(var(--s));
         position: relative;
     }
     .highlight-major {
-        background-color: rgba(255, 0, 0, 0.3);
+        background-color: oklch(var(--a));
         position: relative;
     }
 
@@ -95,7 +84,7 @@
         top: -10px;
         right: -10px;
         cursor: pointer;
-        background-color: white;
+        background-color: hsl(var(--b1));
         border-radius: 50%;
         width: 20px;
         height: 20px;
@@ -109,7 +98,7 @@
         top: -10px;
         right: -10px;
         cursor: pointer;
-        background-color: white;
+        background-color: hsl(var(--b1));
         border-radius: 50%;
         width: 20px;
         height: 20px;
@@ -118,8 +107,8 @@
         font-weight: bold;
     }
     .btn-active {
-        background-color: #4CAF50;
-        color: white;
+        background-color: hsl(var(--p));
+        color: hsl(var(--pc));
     }
 </style>
 
@@ -142,28 +131,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
     translations.forEach(translation => {
         originalTexts.set(translation, translation.textContent);
-        translation.addEventListener('mouseup', handleSelection);
+        // No need to add event listener here
     });
+
+    document.addEventListener('mouseup', handleSelection);
 
     function handleSelection(event) {
         const selection = window.getSelection();
         if (selection.toString().length > 0) {
-            const range = selection.getRangeAt(0);
-            const startContainer = range.startContainer;
-            const endContainer = range.endContainer;
-            
-            let startOffset = getTextOffset(this, startContainer, range.startOffset);
-            let endOffset = getTextOffset(this, endContainer, range.endOffset);
+            let node = selection.anchorNode;
 
-            currentSelection = {
-                translation: this,
-                start: startOffset,
-                end: endOffset,
-                text: originalTexts.get(this).slice(startOffset, endOffset)
-            };
-            errorTypeModal.classList.remove('hidden');
+            // Traverse up from the selected node to find the parent with class 'translation'
+            while (node && node !== document) {
+                if (node.nodeType === Node.ELEMENT_NODE && node.classList.contains('translation')) {
+                    break;
+                }
+                node = node.parentNode;
+            }
+
+            if (node && node.classList && node.classList.contains('translation')) {
+                const translation = node;
+                const range = selection.getRangeAt(0);
+                const startContainer = range.startContainer;
+                const endContainer = range.endContainer;
+
+                let startOffset = getTextOffset(translation, startContainer, range.startOffset);
+                let endOffset = getTextOffset(translation, endContainer, range.endOffset);
+
+                currentSelection = {
+                    translation: translation,
+                    start: startOffset,
+                    end: endOffset,
+                    text: originalTexts.get(translation).slice(startOffset, endOffset)
+                };
+
+                // Open the modal
+                errorTypeModal.classList.add('modal-open');
+            }
         }
     }
+
 
     function getTextOffset(rootElement, targetNode, offset) {
         const treeWalker = document.createTreeWalker(rootElement, NodeFilter.SHOW_TEXT, null, false);
@@ -173,13 +180,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (treeWalker.currentNode === targetNode) {
                 return currentOffset + offset;
             }
-            // Remove the condition to include all text nodes
             currentOffset += treeWalker.currentNode.length;
         }
 
         return currentOffset;
     }
-
 
     function saveAnnotation(data) {
         fetch('/save_annotation', {
@@ -235,10 +240,10 @@ document.addEventListener('DOMContentLoaded', function() {
         translation.innerHTML = newHTML;
     }
 
-
     function createHighlightSpan(text, start, end, type) {
         return `<span class="highlight-${type}" data-start="${start}" data-end="${end}" onclick="removeHighlight(this, event)">${text}</span>`;
     }
+
 
 
     function removeHighlight(span, event) {
@@ -265,11 +270,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-
     window.removeHighlight = removeHighlight;  // Ensure this function is accessible globally
-
-
-    window.removeHighlight = removeHighlight;  // Make it globally accessible
 
     function loadExistingAnnotations() {
         fetch(`/get_annotations/${form.dataset.sentenceId}`)
@@ -318,8 +319,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-
-
     loadExistingAnnotations();
 
     function handleErrorType(type) {
@@ -352,11 +351,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            errorTypeModal.classList.add('hidden');
+            errorTypeModal.classList.remove('modal-open');
             currentSelection = null;
         }
     }
-
 
     majorErrorBtn.addEventListener('click', () => handleErrorType('major'));
     minorErrorBtn.addEventListener('click', () => handleErrorType('minor'));
@@ -417,15 +415,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     markCompleteBtn.addEventListener('click', () => {
+        const isCompleted = markCompleteBtn.classList.contains('btn-success') && !markCompleteBtn.classList.contains('btn-outline');
         saveAnnotation({
             sentence_id: form.dataset.sentenceId,
-            is_completed: true
+            is_completed: !isCompleted
         });
-        alert('Task marked as complete');
-        if (nextBtn && nextBtn.href) {
-            window.location.href = nextBtn.href;
+        if (isCompleted) {
+            markCompleteBtn.classList.add('btn-outline');
+            markCompleteBtn.textContent = 'Mark as Complete';
         } else {
-            window.location.href = '{{ url_for("annotate") }}';
+            markCompleteBtn.classList.remove('btn-outline');
+            markCompleteBtn.textContent = 'Completed';
         }
     });
 });

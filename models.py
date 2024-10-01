@@ -27,6 +27,8 @@ class Sentence(db.Model):
     model2_translation = db.Column(db.Text, nullable=False)
     model3_name = db.Column(db.String(100), nullable=False)
     model3_translation = db.Column(db.Text, nullable=False)
+    model4_name = db.Column(db.String(100), nullable=False)
+    model4_translation = db.Column(db.Text, nullable=False)
 
     def __getitem__(self, key):
         return getattr(self, key)
