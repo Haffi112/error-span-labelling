@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="py-8">
-    <h1 class="text-3xl mb-4">Admin Dashboard</h1>
-    <div class="grid grid-cols-2 gap-4">
+<div class="py-8 max-w-4xl mx-auto">
+    <h1 class="text-3xl mb-4 text-base-content">Admin Dashboard</h1>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <a href="{{ url_for('admin_upload') }}" class="btn btn-primary">Upload CSV</a>
         <!-- Add more admin actions here -->
+        <a href="#" class="btn btn-secondary">View Statistics</a>
+        <a href="#" class="btn btn-accent">Manage Users</a>
+        <a href="#" class="btn btn-info">Export Data</a>
     </div>
 </div>
 {% endblock %}
