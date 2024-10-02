@@ -17,7 +17,10 @@
                 <label class="block text-base-content text-sm font-bold mb-2" for="score{{ loop.index0 }}">
                     Overall Score (0-100%)
                 </label>
-                <input type="range" min="0" max="100" value="50" class="range range-primary" step="1" id="score{{ loop.index0 }}" data-model="{{ sentence[model + '_name'] }}" />
+                <div class="flex items-center">
+                    <input type="range" min="0" max="100" value="50" class="range range-primary flex-grow" step="1" id="score{{ loop.index0 }}" data-model="{{ sentence[model + '_name'] }}" />
+                    <span class="ml-4 text-lg font-semibold score-display">50%</span>
+                </div>
                 <div class="w-full flex justify-between text-xs px-2 text-base-content">
                     <span>0%</span>
                     <span>33%</span>
@@ -310,7 +313,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         // Set overall score
                         const scoreInput = translation.closest('.border').querySelector('input[type="range"]');
-                        if (scoreInput) scoreInput.value = annotation.overall_score;
+                        if (scoreInput) {
+                            scoreInput.value = annotation.overall_score;
+                            const scoreDisplay = scoreInput.parentElement.querySelector('.score-display');
+                            if (scoreDisplay) {
+                                scoreDisplay.textContent = `${annotation.overall_score}%`;
+                            }
+                        }
                     }
                 });
             })
@@ -388,13 +397,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     scoreInputs.forEach(input => {
         let timeout;
+        const scoreDisplay = input.parentElement.querySelector('.score-display');
+        
         input.addEventListener('input', function() {
             clearTimeout(timeout);
+            const score = this.value;
+            scoreDisplay.textContent = `${score}%`;
+            
             timeout = setTimeout(() => {
                 saveAnnotation({
                     sentence_id: form.dataset.sentenceId,
                     model_name: this.dataset.model,
-                    overall_score: parseInt(this.value)
+                    overall_score: parseInt(score)
                 });
             }, 100);
         });
